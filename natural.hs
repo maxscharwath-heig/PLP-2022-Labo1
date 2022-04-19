@@ -11,78 +11,88 @@ module Natural where
 data Nat = Z | S Nat
    deriving (Show)
 
-instance Num Nat where
-   -- +
-   S n + S m = n + m
-   Z + S m = m
-   S n + Z = n
-   _ + _ = Z
+-- Arithmetics
+-- +
+add :: Nat -> Nat -> Nat
+add (S n) m = S (add n m)
+add Z n = n
 
-   -- -
-   S n - S m = n - m
-   S n - Z = n
-   _ - _ = Z
+-- -
+sub :: Nat -> Nat -> Nat
+sub (S n) m = sub n m
+sub Z n = n
 
-   -- *
-   S n * S m = n * m
-   _ * _ = Z
+-- *
+multi :: Nat -> Nat -> Nat
+multi (S n) m = add m (multi n m)
+multi Z _ = Z
 
-   -- ^
-   -- (^) S n S m = n * m
-   -- (^) _  _ = Z 
-
-   fromInteger 0 = Z -- Pas vraiment juste (retourne S Z et on veut Z)
-   fromInteger 1 = Z
-   fromInteger n = S (fromInteger (n-1))
-
-instance Eq Nat where
-   -- ==
-   Z == Z = True
-   S n == S m = n == m
-   _ == _ = False
-
-   -- /=
-   Z /= Z = True
-   S n /= S m = n /= m
-   _ /= _ = True
-
-instance Ord Nat where
-   -- <
-   Z < S n = True
-   S n < Z = False
-   S n < S m = n < m
-   _ < _ = False
-
-   -- <=
-   Z <= S n = True
-   S n <= Z = False
-   S n <= S m = n <= m
-   _ <= _ = True
-
-   -- >
-   Z > S n = False
-   S n > Z = True
-   S n > S m = n > m
-   _ > _ = False
-
-   -- >=
-   Z >= S n = False
-   S n >= Z = True
-   S n >= S m = n >= m
-   _ >= _ = True
-
-instance Enum Nat where 
-   succ Z = S 1
-   succ (S n) = S (n + 1)
-
-   pred Z = Z
-   pred (S n) = S (n - 1)
+-- ^
+pow :: Nat -> Nat -> Nat
+pow n (S m) = multi n (pow n m)
+pow _ Z = S Z
 
 
+-- Comparisons
+-- ==
+eq :: Nat -> Nat -> Bool
+eq (S n) (S m) = eq n m
+eq Z Z = True
+eq _ _ = False
 
-zero :: Nat 
+-- /=
+neq :: Nat -> Nat -> Bool 
+neq n m = not (eq n m)
+
+-- <
+lt :: Nat -> Nat -> Bool
+lt (S n) (S m) = lt n m
+lt Z (S n) = True
+lt _ _ = False
+
+-- <=
+leq :: Nat -> Nat -> Bool
+leq n m = lt n m || eq n m
+
+-- >
+gt :: Nat -> Nat -> Bool
+gt n m = not (leq n m)
+
+-- >=
+geq :: Nat -> Nat -> Bool
+geq n m = gt n m || eq n m
+
+-- Convertions
+-- Int -> Nat
+intToNat :: Int -> Nat
+intToNat 0 = Z
+intToNat n = S (intToNat (n - 1))
+
+-- Nat -> Int
+natToInt :: Nat -> Int
+natToInt Z = 0
+natToInt (S n) = 1 + natToInt n
+
+-- Nat -> String
+natToString :: Nat -> String
+natToString = show
+
+-- Functions
+-- succ
+succ' :: Nat -> Nat
+succ' (S n) = S (succ' n)
+succ' Z = S Z
+
+-- pred
+pred' :: Nat -> Nat
+pred' (S n) = S (pred' n)
+pred' Z = Z
+
+-- zero
+zero :: Nat
 zero = Z
 
+-- isZero
 isZero :: Nat -> Bool
 isZero Z = True 
 isZero _ = False
