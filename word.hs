@@ -13,18 +13,7 @@ import Text.Printf (printf)
 headers :: [String]
 headers = ["file", "word", "line", "byte"]
 
--- getNbWords :: String -> Int
--- getNbWords content = length $ words content
--- getNbLines :: String -> Int
--- getNbLines content = length $ lines content
-
--- getFileInfo :: FilePath -> IO [FilePath]
--- getFileInfo file = withFile file ReadMode (\handle -> do
---          contents <- hGetContents handle
---          -- printf "%s     %s     %s     %s\n" file (show $ getNbWords contents) (show $ getNbLines contents) (show $ length contents)
---          return [file, show $ getNbWords contents, show $ getNbLines contents, show $ length contents]
---       )
-
+sumColons :: Num a => [[a]] -> [a]
 sumColons [] = []
 sumColons xs = foldl (zipWith (+)) (repeat 0) xs
 
@@ -36,10 +25,9 @@ readfile file = do
       contents <- readFile file
       return $ getCounts contents
 
+displayFileRow row = printf "%s     %d      %d      %d\n" (fst row) (head $ snd row) (snd row !! 1) (snd row !! 2)
 
-displayFileRow counts = printf "%s     %d      %d      %d\n" ("file" :: String) (head counts) (counts !! 1) (counts !! 2)
-
-
+main :: IO ()
 main =
    do
    args <- getArgs
@@ -47,12 +35,18 @@ main =
       putStrLn "Please specify at least one file"
    else do
       files <- mapM readfile args
+
+      -- Add the file name before the counts for earch file
+      let rows = zip args files
+
+      print rows
+
       let sums = sumColons files
 
       mapM_ (printf "%s     ") headers
       putStrLn ""
- 
-      mapM_ displayFileRow files
 
-      printf "%s     %d      %d      %d\n" ("total" :: String) (head sums) (sums !! 1) (sums !! 2)
+      mapM_ displayFileRow rows
+
+      printf "%s     %d     %d     %d\n" "total" (head sums) (sums !! 1) (sums !! 2)
       
