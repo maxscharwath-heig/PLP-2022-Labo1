@@ -10,9 +10,6 @@ import System.IO (withFile, IOMode (ReadMode), hGetContents)
 import System.Directory.Internal.Prelude (getArgs)
 import Text.Printf (printf)
 
-headers :: [String]
-headers = ["file", "word", "line", "byte"]
-
 sumColons :: Num a => [[a]] -> [a]
 sumColons [] = []
 sumColons xs = foldl (zipWith (+)) (repeat 0) xs
@@ -25,7 +22,11 @@ readfile file = do
       contents <- readFile file
       return $ getCounts contents
 
-displayFileRow row = printf "%s     %d      %d      %d\n" (fst row) (head $ snd row) (snd row !! 1) (snd row !! 2)
+displayHeaders headers = printf "%-10s %10s %10s %10s\n" (head headers) (headers !! 1) (headers !! 2) (headers !! 3)
+
+displayFileRow row = printf "%-10s %10d %10d %10d\n" (fst row) (head $ snd row) (snd row !! 1) (snd row !! 2)
+
+displayFooter footers = printf "%-10s %10d %10d %10d\n" "total" (head footers) (footers !! 1) (footers !! 2)
 
 main :: IO ()
 main =
@@ -36,17 +37,14 @@ main =
    else do
       files <- mapM readfile args
 
-      -- Add the file name before the counts for earch file
+      -- Add the file name before the counts for each file
       let rows = zip args files
 
-      print rows
-
+      -- Calculate the sum of all the counts
       let sums = sumColons files
 
-      mapM_ (printf "%s     ") headers
-      putStrLn ""
-
+      -- Display
+      displayHeaders ["file", "word", "line", "byte"]
       mapM_ displayFileRow rows
-
-      printf "%s     %d     %d     %d\n" "total" (head sums) (sums !! 1) (sums !! 2)
+      displayFooter sums
       
