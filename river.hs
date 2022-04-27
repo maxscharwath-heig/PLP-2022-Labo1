@@ -1,4 +1,5 @@
 import System.Environment (getArgs)
+import System.Exit(exitSuccess)
 {-
    PLP - Laboratoire 1
 
@@ -14,7 +15,7 @@ commands =
     (":u", helpCallback, "décharger la barque"),
     (":m", helpCallback, "déplacer la barque"),
     (":r", helpCallback, "réinitialiser le jeu"),
-    (":q", helpCallback, "quitter le jeu"),
+    (":q", exitSuccess, "quitter le jeu"),
     (":h", helpCallback, "afficher l'aide")
   ]
 
@@ -25,15 +26,21 @@ getCommand arg = filter (\(x, _, _) -> x == arg) commands
 helpCallback = do putStrLn "Commandes disponibles :"
                   mapM_ (\(x, _, d) -> putStrLn $ "  " ++ x ++ " " ++ d) commands
 
-main = do
-   args <- getArgs
-   if null args then error "Invalid command"
-   else do 
-      let command = getCommand (head args)
-      if null command then error "Invalid command"
-      else do
-      let params = tail args
 
-      -- get callback
-      let (_, callback, _) = head command
-      callback
+gameLoop :: IO ()
+gameLoop = do
+  putStrLn "Entrez une commande :"
+  line <- getLine
+  let cmd = getCommand line
+  if null cmd then putStrLn "Invalid command"
+  else do
+    let (_, callback, _) = head cmd
+    callback
+
+  gameLoop
+
+
+main = do
+  putStrLn "Bienvenue dans le jeu du loup, la chèvre et les choux !"
+  helpCallback
+  gameLoop
