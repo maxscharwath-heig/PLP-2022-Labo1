@@ -1,0 +1,12 @@
+{
+    "i am a text": [
+        null,
+        true,
+        123,
+        false,
+        {
+            "key": "value"
+        },
+        []
+    ]
+}
