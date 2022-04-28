@@ -9,7 +9,7 @@
 module Natural where
 
 data Nat = Z | S Nat
-   deriving (Show)
+  deriving (Show)
 
 -- Arithmetics
 -- +
@@ -23,15 +23,15 @@ sub (S n) m = sub n m
 sub Z n = n
 
 -- *
+
 multi :: Nat -> Nat -> Nat
 multi (S n) m = add m (multi n m)
 multi Z _ = Z
-
 -- ^
+
 pow :: Nat -> Nat -> Nat
 pow n (S m) = multi n (pow n m)
 pow _ Z = S Z
-
 
 -- Comparisons
 -- ==
@@ -41,7 +41,7 @@ eq Z Z = True
 eq _ _ = False
 
 -- /=
-neq :: Nat -> Nat -> Bool 
+neq :: Nat -> Nat -> Bool
 neq n m = not (eq n m)
 
 -- <
@@ -65,8 +65,9 @@ geq n m = gt n m || eq n m
 -- Convertions
 -- Int -> Nat
 intToNat :: Int -> Nat
-intToNat 0 = Z
-intToNat n = S (intToNat (n - 1))
+intToNat n
+  | n <= 0 = Z
+  | otherwise = S (intToNat (n - 1))
 
 -- Nat -> Int
 natToInt :: Nat -> Int
@@ -94,5 +95,5 @@ zero = Z
 
 -- isZero
 isZero :: Nat -> Bool
-isZero Z = True 
+isZero Z = True
 isZero _ = False
