@@ -23,7 +23,7 @@ data Bank = Bank {
 
 data Game = Game {
   boat :: Boat,
-  boatSide :: Bool, -- False = left, True = right
+  boatSide :: Bool, -- False = gauche, True = droite
   leftBank :: Bank,
   rightBank :: Bank
 } deriving (Show)
@@ -85,7 +85,6 @@ validateMove game
   | otherwise = True
   where l = bankContent (leftBank game)
         r = bankContent (rightBank game)
-
 
 stringToPerson :: String -> Person
 stringToPerson "loup" = Wolf
