@@ -90,8 +90,11 @@ pred' (S n) = S (pred' n)
 pred' Z = Z
 
 -- zero
-zero :: Nat
-zero = Z
+zero :: a -> Nat
+zero _ = Z
+
+zero' :: Nat
+zero' = Z
 
 -- isZero
 isZero :: Nat -> Bool
