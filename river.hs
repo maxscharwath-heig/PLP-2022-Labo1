@@ -5,13 +5,24 @@
 
    @author Nicolas Crausaz
    @author Maxime Scharwath
+
+   REMARQUE: Les actions non-autorisées n'affichent pas d'erreur, mais ne sont pas exécutées.
 -}
 import System.Environment (getArgs)
 import System.Exit(exitSuccess)
 import Text.Printf (printf)
 import Data.Char (toLower)
 
-data Person = Wolf | Goat | Cabbage | Farmer deriving (Eq, Show)
+{-
+  Définition des structures et types
+-}
+data Person = Wolf | Goat | Cabbage | Farmer deriving (Eq)
+
+instance Show Person where
+  show Wolf = "loup"
+  show Goat = "chevre"
+  show Cabbage = "choux"
+  show Farmer = "fermier"
 
 data Boat = Boat {
   boatContent :: [Person]
@@ -28,6 +39,9 @@ data Game = Game {
   rightBank :: Bank
 } deriving (Show)
 
+{-
+  Implémentation des commandes
+-}
 commands :: [([Char], [Char])]
 commands =
   [ (":p", "afficher l'état du jeu"),
@@ -55,6 +69,7 @@ removePersonFromBank p (Bank b) = Bank (filter (/= p) b)
 
 loadPersonInBoat :: Game -> Person -> Game
 loadPersonInBoat (Game (Boat b) side (Bank l) (Bank r)) p
+    | length b == 2 = Game (Boat b) side (Bank l) (Bank r)
     | not side && isPersonInBank p (Bank l) = Game (Boat (p:b)) side (removePersonFromBank p (Bank l)) (Bank r)
     | side && isPersonInBank p (Bank r) = Game (Boat (p:b)) side (Bank l) (removePersonFromBank p (Bank r))
     | otherwise = Game (Boat b) side (Bank l) (Bank r)
@@ -66,7 +81,7 @@ unloadBoat (Game (Boat b) side (Bank l) (Bank r))
 
 moveBoat :: Game -> Game
 moveBoat (Game (Boat b) side (Bank l) (Bank r))
-  | validateMove (Game (Boat b) side (Bank l) (Bank r)) = Game (Boat b) (not side) (Bank l) (Bank r)
+  | Farmer `elem` b && validateMove (Game (Boat b)  (not side) (Bank l) (Bank r)) = Game (Boat b) (not side) (Bank l) (Bank r)
   | otherwise = Game (Boat b) side (Bank l) (Bank r)
 
 
@@ -78,10 +93,15 @@ printGameState game = do
   putStrLn $ "    Gauche : " ++ show (bankContent (leftBank game))
   putStrLn $ "    Droite : " ++ show (bankContent (rightBank game)) ++ "\n\n"
 
+{-
+  Validation du déplacement
+
+  Situations impossibles: si barque a loup et chevre 
+-}
 validateMove :: Game -> Bool
 validateMove game
-  | not (boatSide game) = all (`elem` r) [Wolf, Goat] || all (`elem` r) [Cabbage, Goat]
-  | boatSide game = all (`elem` l) [Wolf, Goat] || all (`elem` l) [Cabbage, Goat]
+  | not (boatSide game) = not $ all (`elem` r) [Wolf, Goat] && all (`elem` r) [Cabbage, Goat]
+  | boatSide game = not $ all (`elem` l) [Wolf, Goat] && all (`elem` l) [Cabbage, Goat]
   | otherwise = True
   where l = bankContent (leftBank game)
         r = bankContent (rightBank game)
@@ -98,6 +118,10 @@ loadAction game name
   | [toLower s | s <- name] `elem` ["loup", "chevre", "choux", "fermier"] = loadPersonInBoat game (stringToPerson name)
   | otherwise = game
 
+
+{-
+  Boucle du jeu
+-}
 gameLoop :: Game -> IO ()
 gameLoop game = do
   putStrLn "Entrez une commande :"
@@ -116,7 +140,7 @@ gameLoop game = do
 
   gameLoop game
 
-
+main :: IO ()
 main = do
   putStrLn "Bienvenue dans le jeu du loup, la chèvre et les choux !\n"
   displayHelp

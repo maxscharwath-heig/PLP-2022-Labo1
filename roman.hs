@@ -20,8 +20,6 @@ module Roman
 where
 
 import Data.List (group, isSubsequenceOf)
-import Debug.Trace (trace)
-import Distribution.Simple.Utils (xargs)
 
 romToNum :: Char -> Integer
 romToNum 'O' = 0
