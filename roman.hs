@@ -8,10 +8,12 @@
 -}
 module Roman
   ( 
-      convertRomanToNumber,
-      convertNumberToRoman
+    convertRomanToNumber,
+    convertNumberToRoman
   )
 where
+
+import Data.List (group)
 
 romToNum :: Char -> Integer
 romToNum 'O' = 0
@@ -22,11 +24,24 @@ romToNum 'L' = 50
 romToNum 'C' = 100
 romToNum 'D' = 500
 romToNum 'M' = 1000
-romToNum xs = 0
+romToNum xs = error "Invalid character"
 
+{-
+  Vérifie si le nombre romain n'est pas composé de plus de 3 caractères identiques
+  à la suite (non autorisé, sauf pour M mais notre problème est limité des nombre <= 3999 donc ce cas n'apparait pas)
+-}
+-- 
+isRomanValid :: String -> Bool
+isRomanValid [] = True
+isRomanValid xs = not $ any (\x -> length x > 3) (group xs)
+
+{-
+  Converti une représentation en chiffre romain en un entier
+-}
 convertRomanToNumber :: String -> Integer
 convertRomanToNumber [] = 0
 convertRomanToNumber (x : xs)
+  | not $ isRomanValid (x : xs) = error "Invalid number"
   | length (x : xs) == 1 = romToNum x
   | romToNum x < romToNum (head xs) = convertRomanToNumber xs - romToNum x
   | otherwise = convertRomanToNumber xs + romToNum x
@@ -48,6 +63,9 @@ convertions =
     (1, "I")
   ]
 
+{-
+  Converti un entier vers sa représentation en chiffre romain
+-}
 convertNumberToRoman :: Integer -> String
 convertNumberToRoman n
    | n >= 4000 = "Number too big"

@@ -9,10 +9,11 @@
 import System.Environment (getArgs)
 import System.Exit(exitSuccess)
 import Text.Printf (printf)
+import Data.Char (toLower)
 
 data Person = Wolf | Goat | Cabbage | Farmer deriving (Eq, Show)
 
-newtype Boat = Boat {
+data Boat = Boat {
   boatContent :: [Person]
 } deriving (Show)
 
@@ -22,7 +23,7 @@ data Bank = Bank {
 
 data Game = Game {
   boat :: Boat,
-  boatSide :: Bool, -- False = left, True = right
+  boatSide :: Bool, -- False = gauche, True = droite
   leftBank :: Bank,
   rightBank :: Bank
 } deriving (Show)
@@ -43,11 +44,6 @@ displayHelp = do
   putStrLn "Liste des commandes :"
   mapM_ (uncurry (printf "%-20s %-10s\n")) commands
 
--- getCommand :: String -> [(String, IO (), String)]
--- getCommand arg = filter (\(x, _, _) -> x == arg) commands
-
--- TODO: Regles de couples autorisés
-
 initGame :: Game
 initGame = Game (Boat []) False (Bank [Wolf, Goat, Cabbage, Farmer]) (Bank [])
 
@@ -63,35 +59,57 @@ loadPersonInBoat (Game (Boat b) side (Bank l) (Bank r)) p
     | side && isPersonInBank p (Bank r) = Game (Boat (p:b)) side (Bank l) (removePersonFromBank p (Bank r))
     | otherwise = Game (Boat b) side (Bank l) (Bank r)
 
+unloadBoat :: Game -> Game
+unloadBoat (Game (Boat b) side (Bank l) (Bank r))
+    | not side = Game (Boat []) side (Bank (b ++ l)) (Bank r)
+    | otherwise = Game (Boat []) side (Bank l) (Bank (b ++ r))
 
--- unloadPerson :: Game -> Person -> Game
--- unloadPerson game person = game { boat = boat { boatContent = filter (/= person) (boatContent boat) } }
-
--- display commands
--- helpCallback :: IO ()
--- helpCallback = do putStrLn "Commandes disponibles :" ; map (\(x, y) -> putStrLn $ x ++ " : " ++ y) commands
+moveBoat :: Game -> Game
+moveBoat (Game (Boat b) side (Bank l) (Bank r))
+  | validateMove (Game (Boat b) side (Bank l) (Bank r)) = Game (Boat b) (not side) (Bank l) (Bank r)
+  | otherwise = Game (Boat b) side (Bank l) (Bank r)
 
 
 printGameState :: Game -> IO ()
 printGameState game = do
   putStrLn "Etat du jeu :"
-  putStrLn $ "  Barque : " ++ show (boatContent (boat game))
+  putStrLn $ "  Barque : " ++ show (boatContent (boat game)) ++ " sur la rive " ++ if boatSide game then "droite" else "gauche"
   putStrLn "  Rives : "
   putStrLn $ "    Gauche : " ++ show (bankContent (leftBank game))
-  putStrLn $ "    Droite : " ++ show (bankContent (rightBank game))
+  putStrLn $ "    Droite : " ++ show (bankContent (rightBank game)) ++ "\n\n"
 
+validateMove :: Game -> Bool
+validateMove game
+  | not (boatSide game) = all (`elem` r) [Wolf, Goat] || all (`elem` r) [Cabbage, Goat]
+  | boatSide game = all (`elem` l) [Wolf, Goat] || all (`elem` l) [Cabbage, Goat]
+  | otherwise = True
+  where l = bankContent (leftBank game)
+        r = bankContent (rightBank game)
+
+stringToPerson :: String -> Person
+stringToPerson "loup" = Wolf
+stringToPerson "chevre" = Goat
+stringToPerson "choux" = Cabbage
+stringToPerson "fermier" = Farmer
+stringToPerson _ = error "Invalid person"
+
+loadAction :: Game -> String -> Game
+loadAction game name
+  | [toLower s | s <- name] `elem` ["loup", "chevre", "choux", "fermier"] = loadPersonInBoat game (stringToPerson name)
+  | otherwise = game
 
 gameLoop :: Game -> IO ()
 gameLoop game = do
   putStrLn "Entrez une commande :"
   line <- getLine
   let args = words line
+  let sndArg = if length args > 1 then args !! 1 else ""
   case head args of
     ":p" -> printGameState game
-    -- ":l" -> loadPersonInBoat game (args !! 1)
-    ":u" -> printGameState game
-    ":m" -> printGameState game
-    ":r" -> printGameState game
+    ":l" -> gameLoop $ loadAction game sndArg
+    ":u" -> gameLoop $ unloadBoat game
+    ":m" -> gameLoop $ moveBoat game
+    ":r" -> gameLoop initGame
     ":q" -> exitSuccess
     ":h" -> displayHelp
     _ -> putStrLn "Invalid command"
@@ -100,7 +118,6 @@ gameLoop game = do
 
 
 main = do
-  putStrLn "Bienvenue dans le jeu du loup, la chèvre et les choux !"
+  putStrLn "Bienvenue dans le jeu du loup, la chèvre et les choux !\n"
   displayHelp
-  printGameState initGame
   gameLoop initGame
