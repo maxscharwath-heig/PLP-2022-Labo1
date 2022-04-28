@@ -64,12 +64,6 @@ tokenize ('"':xs) = String (takeWhile (/='"') xs) : tokenize (tail $ dropWhile (
 tokenize (c:xs) | isDigit c = Number (read (c:takeWhile isDigit xs)) : tokenize (dropWhile isDigit xs)
 tokenize x = error ("Invalid JSON here -> " ++ show x)
 
-json = "{ \"str\" : [ 123, true, yolo ] }"
-
-tokenizeToString :: [JSONt] -> [String]
-tokenizeToString [] = []
-tokenizeToString (x:xs) = show x : tokenizeToString xs
-
 main :: IO ()
 main =
    do
@@ -79,7 +73,7 @@ main =
       else do
          handle <- openFile (head args) ReadMode
          contents <- hGetContents handle
-         putStrLn $ show $ tokenizeToString $ tokenize contents
+         print (map show $ tokenize contents)
          hClose handle
 
 
