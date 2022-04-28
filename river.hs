@@ -8,10 +8,11 @@
 
    REMARQUE: Les actions non-autorisées n'affichent pas d'erreur, mais ne sont pas exécutées.
 -}
-import System.Environment (getArgs)
-import System.Exit(exitSuccess)
-import Text.Printf (printf)
+
 import Data.Char (toLower)
+import System.Environment (getArgs)
+import System.Exit (exitSuccess)
+import Text.Printf (printf)
 
 {-
   Définition des structures et types
@@ -24,20 +25,17 @@ instance Show Person where
   show Cabbage = "choux"
   show Farmer = "fermier"
 
-data Boat = Boat {
-  boatContent :: [Person]
-} deriving (Show)
+data Boat = Boat {boatContent :: [Person]} deriving (Show)
 
-data Bank = Bank {
-  bankContent :: [Person]
-} deriving (Show)
+data Bank = Bank {bankContent :: [Person]} deriving (Show)
 
-data Game = Game {
-  boat :: Boat,
-  boatSide :: Bool, -- False = gauche, True = droite
-  leftBank :: Bank,
-  rightBank :: Bank
-} deriving (Show)
+data Game = Game { 
+    boat :: Boat,
+    boatSide :: Bool, -- False = gauche, True = droite
+    leftBank :: Bank,
+    rightBank :: Bank
+  }
+  deriving (Show)
 
 {-
   Implémentation des commandes
@@ -67,23 +65,32 @@ isPersonInBank p (Bank b) = p `elem` b
 removePersonFromBank :: Person -> Bank -> Bank
 removePersonFromBank p (Bank b) = Bank (filter (/= p) b)
 
+{-
+  Chargement d'une personne dans la barque, on vérifie que la personne est sur la meme rive que la barque
+  et que la barque n'est pas pleine
+-}
 loadPersonInBoat :: Game -> Person -> Game
 loadPersonInBoat (Game (Boat b) side (Bank l) (Bank r)) p
-    | length b == 2 = Game (Boat b) side (Bank l) (Bank r)
-    | not side && isPersonInBank p (Bank l) = Game (Boat (p:b)) side (removePersonFromBank p (Bank l)) (Bank r)
-    | side && isPersonInBank p (Bank r) = Game (Boat (p:b)) side (Bank l) (removePersonFromBank p (Bank r))
-    | otherwise = Game (Boat b) side (Bank l) (Bank r)
-
-unloadBoat :: Game -> Game
-unloadBoat (Game (Boat b) side (Bank l) (Bank r))
-    | not side = Game (Boat []) side (Bank (b ++ l)) (Bank r)
-    | otherwise = Game (Boat []) side (Bank l) (Bank (b ++ r))
-
-moveBoat :: Game -> Game
-moveBoat (Game (Boat b) side (Bank l) (Bank r))
-  | Farmer `elem` b && validateMove (Game (Boat b)  (not side) (Bank l) (Bank r)) = Game (Boat b) (not side) (Bank l) (Bank r)
+  | length b == 2 = Game (Boat b) side (Bank l) (Bank r)
+  | not side && isPersonInBank p (Bank l) = Game (Boat (p : b)) side (removePersonFromBank p (Bank l)) (Bank r)
+  | side && isPersonInBank p (Bank r) = Game (Boat (p : b)) side (Bank l) (removePersonFromBank p (Bank r))
   | otherwise = Game (Boat b) side (Bank l) (Bank r)
 
+{-
+  Déchargement de la barque vers la rive actuelle
+-}
+unloadBoat :: Game -> Game
+unloadBoat (Game (Boat b) side (Bank l) (Bank r))
+  | not side = Game (Boat []) side (Bank (b ++ l)) (Bank r)
+  | otherwise = Game (Boat []) side (Bank l) (Bank (b ++ r))
+
+{-
+  On bouge le bateau si le fermier est dedans, et que le potentiel état suivant est valide
+-}
+moveBoat :: Game -> Game
+moveBoat (Game (Boat b) side (Bank l) (Bank r))
+  | Farmer `elem` b && validateMove (Game (Boat b) (not side) (Bank l) (Bank r)) = Game (Boat b) (not side) (Bank l) (Bank r)
+  | otherwise = Game (Boat b) side (Bank l) (Bank r)
 
 printGameState :: Game -> IO ()
 printGameState game = do
@@ -96,15 +103,16 @@ printGameState game = do
 {-
   Validation du déplacement
 
-  Situations impossibles: si barque a loup et chevre 
+  Situations impossibles: si barque a loup et chevre
 -}
 validateMove :: Game -> Bool
 validateMove game
   | not (boatSide game) = not $ all (`elem` r) [Wolf, Goat] && all (`elem` r) [Cabbage, Goat]
   | boatSide game = not $ all (`elem` l) [Wolf, Goat] && all (`elem` l) [Cabbage, Goat]
   | otherwise = True
-  where l = bankContent (leftBank game)
-        r = bankContent (rightBank game)
+  where
+    l = bankContent (leftBank game)
+    r = bankContent (rightBank game)
 
 stringToPerson :: String -> Person
 stringToPerson "loup" = Wolf
@@ -118,27 +126,34 @@ loadAction game name
   | [toLower s | s <- name] `elem` ["loup", "chevre", "choux", "fermier"] = loadPersonInBoat game (stringToPerson name)
   | otherwise = game
 
+isGameSolved :: Game -> Bool
+isGameSolved (Game _ _ _ (Bank r)) = all (`elem` r) [Wolf, Goat, Cabbage, Farmer]
 
 {-
   Boucle du jeu
 -}
 gameLoop :: Game -> IO ()
 gameLoop game = do
-  putStrLn "Entrez une commande :"
-  line <- getLine
-  let args = words line
-  let sndArg = if length args > 1 then args !! 1 else ""
-  case head args of
-    ":p" -> printGameState game
-    ":l" -> gameLoop $ loadAction game sndArg
-    ":u" -> gameLoop $ unloadBoat game
-    ":m" -> gameLoop $ moveBoat game
-    ":r" -> gameLoop initGame
-    ":q" -> exitSuccess
-    ":h" -> displayHelp
-    _ -> putStrLn "Invalid command"
+  if isGameSolved game
+    then do
+      putStrLn "Vous avez gagné !"
+      exitSuccess
+    else do
+      putStrLn "Entrez une commande :"
+      line <- getLine
+      let args = words line
+      let sndArg = if length args > 1 then args !! 1 else ""
+      case head args of
+        ":p" -> printGameState game
+        ":l" -> gameLoop $ loadAction game sndArg
+        ":u" -> gameLoop $ unloadBoat game
+        ":m" -> gameLoop $ moveBoat game
+        ":r" -> gameLoop initGame
+        ":q" -> exitSuccess
+        ":h" -> displayHelp
+        _ -> putStrLn "Invalid command"
 
-  gameLoop game
+      gameLoop game
 
 main :: IO ()
 main = do
