@@ -5,21 +5,15 @@
 
    @author Nicolas Crausaz
    @author Maxime Scharwath
-
-   REMARQUE: Ce programme autorise la saisie de numérotation romaine n'étant pas strictement valide, mais les résultats sont corrects.
-   C'est-à-dire que les charactères ne faisant pas sens seront ignorés. Exemple: "IIMMII" deviendra "MMII" = 2002, qui est correct.
-   Néamoins le cas d'invilidité où un caractère se répète à la suite plus de 3 fois est validé et lance une erreur (voir isRomanValid).
 -}
 module Roman
   (
     convertRomanToNumber,
-    convertNumberToRoman,
-    checkValidPredecessors, --remove,
-    romToNum --remove
+    convertNumberToRoman
   )
 where
 
-import Data.List (group, isSubsequenceOf)
+import Data.List (group)
 
 romToNum :: Char -> Integer
 romToNum 'O' = 0
@@ -30,15 +24,15 @@ romToNum 'L' = 50
 romToNum 'C' = 100
 romToNum 'D' = 500
 romToNum 'M' = 1000
-romToNum xs = error "Invalid number"
+romToNum xs = error "Invalid car"
 
 {-
   Vérifie si le nombre romain n'est pas composé de plus de 3 caractères identiques
   à la suite (non autorisé, sauf pour M mais notre problème est limité des nombre <= 3999 donc ce cas n'apparait pas)
-
-  Les symboles V, L, D ne peuvent pas être présent plus d'une fois.
-
-  Il ne peut pas y avoir plus d'un symbole plus petit que le suivant (ex IIV -> non valide).
+  Vérifie que les symboles V, L, D ne peuvent pas être présent plus d'une fois.
+  Vérifie qu'il ne puisse pas y avoir plus d'un symbole plus petit que le suivant (ex IIV -> non valide). 
+  
+  REMARQUE: Cette denière vérification n'est pas fonctionelle à 100% (certains nombre valides sont considirés comme faux).
 -}
 -- 
 isRomanValid :: String -> Bool
@@ -52,12 +46,9 @@ isRomanValid xs
 checkValidPredecessors :: String -> Bool
 checkValidPredecessors (x:y:z:xs)
   | length (x:y:z:xs) < 3 = True
-  | romToNum x <= romToNum z && romToNum y < romToNum z = False     -- Erreur ici dans certains cas: Ex CCCLXXXIX = 389 mais donne error
+  | romToNum x <= romToNum z && romToNum y < romToNum z = False
   | otherwise = checkValidPredecessors (y:z:xs)
 checkValidPredecessors _ = True
-
-
--- TODO: Seuls les symboles I,X,C peuvent précéder un symbole de poids plus grand
 
 {-
   Converti une représentation en chiffre romain en un entier
